@@ -3,6 +3,7 @@ import Keyboard from "./Keyboard";
 import TextDisplay from "./TextDisplay";
 import LangSelector from "./LangSelector";
 import StyleSelector from "./StyleSelector";
+import FileManager from "./FileManager";
 
 function TextEditor() {
     const [text, setText] = useState("");
@@ -20,15 +21,17 @@ function TextEditor() {
 
     return (
         <>
+            <FileManager text={text} setText={setText} />
             <TextDisplay text={text} />
             <Keyboard language={language}
                 style={style}
                 currText={text}
-                setText={setText} 
-                history={history} 
+                setText={setText}
+                history={history}
                 setHistory={setHistory} />
             <LangSelector setLanguage={setLanguage} />
             <StyleSelector setStyle={setStyle} />
+
         </>
     )
 };
