@@ -1,9 +1,11 @@
 .displayText {
     min-height: 20vh;
+    max-height: 45vh;
     max-width: 75vw;
     border: 1px solid #747bff;
     border-radius: 8px;
-    margin: auto;
+    margin: 20px auto;
     text-align: left;
     padding: 1em;
+    overflow: auto;
 }
