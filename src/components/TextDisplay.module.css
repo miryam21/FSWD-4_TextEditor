@@ -1,0 +1,9 @@
+.displayText {
+    min-height: 20vh;
+    max-width: 75vw;
+    border: 1px solid #747bff;
+    border-radius: 8px;
+    margin: auto;
+    text-align: left;
+    padding: 1em;
+}

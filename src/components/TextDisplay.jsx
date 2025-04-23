@@ -1,8 +1,9 @@
 import React from "react";
+import classes from './TextDisplay.module.css';
 
 function TextDisplay({ text }) {
     return (
-        <div className="text-display"
+        <div className={classes.displayText}
             dangerouslySetInnerHTML={{ __html: text }} />
     )
 };
