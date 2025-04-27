@@ -1,10 +1,10 @@
 import React from "react";
 
 const chars = {
-    'eng': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
-    'heb': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ך', 'ל', 'מ', 'ם', 'נ', 'ן', 'ס', 'ע', 'פ', 'ף', 'צ', 'ץ', 'ק', 'ר', 'ש', 'ת'],
-    'emj': ['😀', '😂', '😍', '😎', '😢', '😡', '🥳', '🤔', '😴', '🤯', '🐶', '🐱', '🍎', '🍌', '❤️', '🌸', '🦄', '🌈'],
-    'sym': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',', '!', '?', '(', ')', '@', '#', '$', '%', '&', '*', '-', '+', '='],
+    'eng': [['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'], ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'], ['z', 'x', 'c', 'v', 'b', 'n', 'm']],
+    'heb': [['\'', '-', 'ק', 'ר', 'א', 'ט', 'ו', 'ן', 'ם', 'פ'], ['ש', 'ד', 'ג', 'כ', 'ע', 'י', 'ח', 'ל', 'ך', 'ף'], ['ז', 'ס', 'ב', 'ה', 'נ', 'מ', 'צ', 'ת', 'ץ']],
+    'emj': [['😀', '😂', '😍', '😎', '😢', '😡', '🥳', '🤔'], ['😴', '🤯', '😭', '👍', '✌️', '💪', '🫶'], ['❤️', '💔', '❤️‍🔥', '🌸', '🌈', '🦄', '💩', '✨']],
+    'sym': [['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], ['.', ',', '!', '?', '(', ')', '@', '#', '$', '%'], ['&', '*', '-', '+', '=', '/', '^', '[', ']']],
     'ctr': ['space ␣', 'enter ↵', 'backspace ⌫', 'del word', 'clear ✘', 'undo ↶']
 }
 
@@ -34,7 +34,7 @@ function Keyboard({ language, style, currText, setText, history, setHistory }) {
         else if (e.target.innerHTML == "del word") {
             setText(prevText => {
                 let lastIndex = Math.max(
-                    prevText.lastIndexOf('<span>&nbsp;</span>'), 
+                    prevText.lastIndexOf('<span>&nbsp;</span>'),
                     prevText.lastIndexOf('<span><br /></span>'));
                 lastIndex = lastIndex == -1 ? 0 : lastIndex;
                 return prevText.slice(0, lastIndex);
@@ -51,7 +51,7 @@ function Keyboard({ language, style, currText, setText, history, setHistory }) {
                 color: ${style.color};
                 font-weight: ${style.fontWeight};
                 font-style: ${style.fontStyle};
-                text-decoration: ${style.textDecoration}">${e.target.innerHTML}</span>`)
+                text-decoration: ${style.textDecoration};">${e.target.innerHTML}</span>`)
         }
     }
 
@@ -64,12 +64,20 @@ function Keyboard({ language, style, currText, setText, history, setHistory }) {
 
     return (
         <div className="keys">
-            {chars[language].map((ch, idx) => (
-                <button key={idx} onClick={handleKeyClick}>{ch}</button>
+            {chars[language].map((row, rowIdx) => (
+                <React.Fragment key={rowIdx}>
+                    {row.map((ch, chIdx) => (
+                        <button key={`${rowIdx}-${chIdx}`} onClick={handleKeyClick}>
+                            {ch}
+                        </button>
+                    ))}
+                    <br />
+                </React.Fragment>
             ))}
-            <br />
             {chars['ctr'].map((ch, idx) => (
-                <button key={idx} onClick={handleKeyClick}>{ch}</button>
+                <button key={`ctr-${idx}`} onClick={handleKeyClick}>
+                    {ch}
+                </button>
             ))}
         </div>
     )

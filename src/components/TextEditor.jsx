@@ -29,8 +29,8 @@ function TextEditor() {
                 setText={setText}
                 history={history}
                 setHistory={setHistory} />
-            <LangSelector setLanguage={setLanguage} />
-            <StyleSelector setStyle={setStyle} />
+            <LangSelector language={language} setLanguage={setLanguage} />
+            <StyleSelector setStyle={setStyle} setText={setText}/>
 
         </>
     )

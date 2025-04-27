@@ -1,6 +1,6 @@
 import React from "react";
 
-function LangSelector({ setLanguage }) {
+function LangSelector({ language, setLanguage }) {
     function selectLanguage(e) {
         console.log(e);
         setLanguage(e.target.value);
@@ -8,10 +8,10 @@ function LangSelector({ setLanguage }) {
 
     return (
         <div className="languages-select">
-            <button value="eng" onClick={selectLanguage}>English</button>
-            <button value="heb" onClick={selectLanguage}>עברית</button>
-            <button value="emj" onClick={selectLanguage}>😊</button>
-            <button value="sym" onClick={selectLanguage}>123@#</button>
+            <button className={`${language == 'eng'? 'active' : ''}`} value="eng" onClick={selectLanguage}>English</button>
+            <button className={`${language == 'heb'? 'active' : ''}`} value="heb" onClick={selectLanguage}>עברית</button>
+            <button className={`${language == 'emj'? 'active' : ''}`} value="emj" onClick={selectLanguage}>😊</button>
+            <button className={`${language == 'sym'? 'active' : ''}`} value="sym" onClick={selectLanguage}>123@#</button>
         </div>
     )
 }
