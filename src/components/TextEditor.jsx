@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import Keyboard from "./Keyboard";
 import TextDisplay from "./TextDisplay";
 import LangSelector from "./LangSelector";
@@ -19,7 +19,6 @@ function TextEditor() {
     const [language, setLanguage] = useState('eng');
     const [visibleDocuments, setVisibleDocuments] = useState([]);
     const [openFileName, setOpenFileName] = useState("");
-    const openFileInputRef = useRef(null);
     const [style, setStyle] = useState({
         fontSize: '16px',
         fontFamily: 'Arial',
@@ -173,13 +172,16 @@ function TextEditor() {
         return currentDoc.content !== text;
     }
 
-    // פונקציה לשמירת המסמך הנוכחי
+    // פונקציה לשמירת המסמך הנוכחי - עם תיקון לעדכון שם
     function saveCurrentDocument() {
-        if (!activeId) return;
+        if (!activeId) return false;
         
+        // יוצרים רשימת מסמכים מעודכנת עם התוכן החדש והשם הנוכחי
         const updatedDocs = documents.map(doc =>
-            doc.id === activeId ? { ...doc, content: text } : doc
+            doc.id === activeId ? { ...doc, name: activeDocName, content: text } : doc
         );
+        
+        // עדכון במצב המקומי
         setDocuments(updatedDocs);
         updateLocalStorage(updatedDocs); // עדכון ה-localStorage
         
@@ -264,6 +266,7 @@ function TextEditor() {
         alert('opened ' + openFileName);
     }
     
+    // פונקציה לעדכון שם מסמך פעיל - עם תיקון לעדכון המערך
     function updateActiveDocName(newName) {
         if (!activeId) return false;
         
@@ -279,7 +282,17 @@ function TextEditor() {
             return false;
         }
         
+        // עדכון שם המסמך במצב המקומי
         setActiveDocName(newName);
+        
+        // עדכון השם גם במערך המסמכים
+        const updatedDocs = documents.map(doc =>
+            doc.id === activeId ? { ...doc, name: newName } : doc
+        );
+        
+        setDocuments(updatedDocs);
+        updateLocalStorage(updatedDocs);
+        
         return true;
     }
     
@@ -512,7 +525,6 @@ function TextEditor() {
                                 Open
                             </button>
                             <input 
-                                ref={openFileInputRef}
                                 type="text" 
                                 placeholder="שם הקובץ לפתיחה"
                                 value={openFileName}
