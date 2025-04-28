@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Keyboard from "./Keyboard";
 import TextDisplay from "./TextDisplay";
 import LangSelector from "./LangSelector";
@@ -7,6 +7,9 @@ import FileManager from "./FileManager";
 
 function TextEditor() {
     const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isRegistering, setIsRegistering] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [documents, setDocuments] = useState([]);
     const [activeId, setActiveIdState] = useState(null);
@@ -14,8 +17,8 @@ function TextEditor() {
     const [text, setText] = useState("");
     const [history, setHistory] = useState([]);
     const [language, setLanguage] = useState('eng');
-    const [visibleDocuments, setVisibleDocuments] = useState([]); // מערך חדש של מסמכים גלויים
-    const [openFileName, setOpenFileName] = useState(""); // שם הקובץ לפתיחה
+    const [visibleDocuments, setVisibleDocuments] = useState([]);
+    const [openFileName, setOpenFileName] = useState("");
     const openFileInputRef = useRef(null);
     const [style, setStyle] = useState({
         fontSize: '16px',
@@ -28,6 +31,10 @@ function TextEditor() {
 
     function storageKey() {
         return `documents_${username}`;
+    }
+    
+    function usersStorageKey() {
+        return 'text_editor_users';
     }
     
     // פונקציית עזר לעדכון ה-localStorage
@@ -57,12 +64,69 @@ function TextEditor() {
             alert("נא להזין שם משתמש");
             return;
         }
+        
+        if (password.trim() === "") {
+            alert("נא להזין סיסמה");
+            return;
+        }
+        
+        // בדיקה אם המשתמש קיים
+        const users = JSON.parse(localStorage.getItem(usersStorageKey())) || {};
+        
+        if (!users[username]) {
+            alert("שם משתמש לא קיים. אנא הירשם תחילה.");
+            setIsRegistering(true);
+            return;
+        }
+        
+        // בדיקת סיסמה
+        if (users[username] !== password) {
+            alert("סיסמה שגויה. נסה שנית.");
+            return;
+        }
+        
         setIsLoggedIn(true);
         loadDocuments();
+    }
+    
+    function handleRegister() {
+        if (username.trim() === "") {
+            alert("נא להזין שם משתמש");
+            return;
+        }
+        
+        if (password.trim() === "") {
+            alert("נא להזין סיסמה");
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            alert("הסיסמאות אינן תואמות");
+            return;
+        }
+        
+        // בדיקה אם המשתמש כבר קיים
+        const users = JSON.parse(localStorage.getItem(usersStorageKey())) || {};
+        
+        if (users[username]) {
+            alert("שם משתמש כבר קיים. נסה שם אחר או התחבר.");
+            return;
+        }
+        
+        // שמירת המשתמש החדש
+        users[username] = password;
+        localStorage.setItem(usersStorageKey(), JSON.stringify(users));
+        
+        alert("ההרשמה הושלמה בהצלחה! כעת אתה יכול להתחבר.");
+        setIsRegistering(false);
+        setPassword("");
+        setConfirmPassword("");
     }
 
     function handleLogout() {
         setUsername("");
+        setPassword("");
+        setConfirmPassword("");
         setIsLoggedIn(false);
         setDocuments([]);
         setVisibleDocuments([]);
@@ -96,17 +160,9 @@ function TextEditor() {
         setText("");
     }
 
+    // שינוי: הפונקציה הזו רק מעדכנת את המצב המקומי, בלי לשמור ב-localStorage
     function updateActiveDocument(newContent) {
-        if (!activeId) return;
-        
         setText(newContent);
-        
-        const updatedDocs = documents.map(doc =>
-            doc.id === activeId ? { ...doc, content: newContent } : doc
-        );
-        
-        setDocuments(updatedDocs);
-        updateLocalStorage(updatedDocs); // עדכון ה-localStorage
     }
 
     // פונקציה לבדיקה אם יש שינויים שלא נשמרו
@@ -118,12 +174,16 @@ function TextEditor() {
     }
 
     // פונקציה לשמירת המסמך הנוכחי
-    function saveCurrentDocument(id) {
+    function saveCurrentDocument() {
+        if (!activeId) return;
+        
         const updatedDocs = documents.map(doc =>
-            doc.id === id ? { ...doc, content: text } : doc
+            doc.id === activeId ? { ...doc, content: text } : doc
         );
         setDocuments(updatedDocs);
         updateLocalStorage(updatedDocs); // עדכון ה-localStorage
+        
+        return true;
     }
 
     // פונקציה להסרת המסמך מהתצוגה
@@ -134,7 +194,7 @@ function TextEditor() {
             
             if (confirmSave) {
                 // שמירת השינויים
-                saveCurrentDocument(id);
+                saveCurrentDocument();
             }
         }
         
@@ -165,12 +225,9 @@ function TextEditor() {
         
         // קריאת כל המסמכים מה-localStorage (כולל המוסתרים!)
         const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
-        console.log("מסמכים בזיכרון:", savedDocs);
+        
         // חיפוש מסמך עם שם מתאים
-      
         const foundDoc = savedDocs.find(doc => doc.name === openFileName);
-        console.log("מסמך שמחפשים:", openFileName);
-        console.log("מסמך שנמצתא:", foundDoc);
         
         if (!foundDoc) {
             alert('no file with this name');
@@ -189,7 +246,7 @@ function TextEditor() {
             
             if (confirmSave) {
                 // שמירת השינויים
-                saveCurrentDocument(activeId);
+                saveCurrentDocument();
             }
         }
         
@@ -223,13 +280,6 @@ function TextEditor() {
         }
         
         setActiveDocName(newName);
-        
-        const updatedDocs = documents.map(doc =>
-            doc.id === activeId ? { ...doc, name: newName } : doc
-        );
-        
-        setDocuments(updatedDocs);
-        updateLocalStorage(updatedDocs); // עדכון ה-localStorage
         return true;
     }
     
@@ -280,17 +330,8 @@ function TextEditor() {
             
             if (confirmSave) {
                 // שמירת השינויים
-                saveCurrentDocument(activeId);
+                saveCurrentDocument();
             }
-        }
-        
-        // מעדכן את המסמך הקודם לפני המעבר למסמך חדש
-        if (activeId) {
-            const updatedDocs = documents.map(doc =>
-                doc.id === activeId ? { ...doc, content: text } : doc
-            );
-            setDocuments(updatedDocs);
-            updateLocalStorage(updatedDocs); // עדכון ה-localStorage
         }
         
         // מגדיר את המסמך החדש כפעיל
@@ -308,39 +349,121 @@ function TextEditor() {
             openFile();
         }
     }
+    
+    // מעבר בין מסכי הרשמה והתחברות
+    function toggleRegistration() {
+        setIsRegistering(!isRegistering);
+        setPassword("");
+        setConfirmPassword("");
+    }
+    
+    // מיקוד על Enter בשדה הסיסמה
+    function handleLoginKeyPress(e) {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    }
+    
+    // מיקוד על Enter בשדה אישור הסיסמה
+    function handleRegisterKeyPress(e) {
+        if (e.key === 'Enter') {
+            handleRegister();
+        }
+    }
 
     return (
         <div style={{ padding: "2em" }}>
             {/* אם לא מחובר */}
             {!isLoggedIn ? (
                 <div style={{ textAlign: "center" }}>
-                    <h2>ברוך הבא! נא להתחבר</h2>
-                    <input
-                        type="text"
-                        placeholder="הכנס שם משתמש"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        style={{
-                            padding: "0.5em",
-                            fontSize: "1em",
-                            borderRadius: "8px",
-                            border: "2px solid #ccc",
-                            width: "250px",
-                            marginBottom: "1em"
-                        }}
-                    />
-                    <br />
-                    <button onClick={handleLogin} style={{
-                        padding: "0.5em 1em",
-                        fontSize: "1em",
-                        borderRadius: "8px",
-                        backgroundColor: "#4CAF50",
-                        color: "white",
-                        border: "none",
-                        cursor: "pointer"
-                    }}>
-                        התחבר
-                    </button>
+                    <h2>{isRegistering ? "הרשמה למערכת" : "ברוך הבא! נא להתחבר"}</h2>
+                    
+                    <div style={{ marginBottom: "1em" }}>
+                        <input
+                            type="text"
+                            placeholder="הכנס שם משתמש"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            style={{
+                                padding: "0.5em",
+                                fontSize: "1em",
+                                borderRadius: "8px",
+                                border: "2px solid #ccc",
+                                width: "250px",
+                                marginBottom: "1em"
+                            }}
+                        />
+                    </div>
+                    
+                    <div style={{ marginBottom: "1em" }}>
+                        <input
+                            type="password"
+                            placeholder="הכנס סיסמה"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={isRegistering ? null : handleLoginKeyPress}
+                            style={{
+                                padding: "0.5em",
+                                fontSize: "1em",
+                                borderRadius: "8px",
+                                border: "2px solid #ccc",
+                                width: "250px",
+                                marginBottom: isRegistering ? "1em" : "0"
+                            }}
+                        />
+                    </div>
+                    
+                    {isRegistering && (
+                        <div style={{ marginBottom: "1em" }}>
+                            <input
+                                type="password"
+                                placeholder="אימות סיסמה"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onKeyPress={handleRegisterKeyPress}
+                                style={{
+                                    padding: "0.5em",
+                                    fontSize: "1em",
+                                    borderRadius: "8px",
+                                    border: "2px solid #ccc",
+                                    width: "250px"
+                                }}
+                            />
+                        </div>
+                    )}
+                    
+                    <div style={{ marginBottom: "1em" }}>
+                        <button 
+                            onClick={isRegistering ? handleRegister : handleLogin} 
+                            style={{
+                                padding: "0.5em 1em",
+                                fontSize: "1em",
+                                borderRadius: "8px",
+                                backgroundColor: isRegistering ? "#2196F3" : "#4CAF50",
+                                color: "white",
+                                border: "none",
+                                cursor: "pointer",
+                                marginRight: "1em"
+                            }}
+                        >
+                            {isRegistering ? "הרשם" : "התחבר"}
+                        </button>
+                        
+                        <button 
+                            onClick={toggleRegistration} 
+                            style={{
+                                padding: "0.5em 1em",
+                                fontSize: "1em",
+                                borderRadius: "8px",
+                                backgroundColor: "#f0f0f0",
+                                color: "#333",
+                                border: "1px solid #ccc",
+                                cursor: "pointer"
+                            }}
+                        >
+                            {isRegistering ? "חזרה להתחברות" : "הרשמה"}
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <>
@@ -476,10 +599,10 @@ function TextEditor() {
                         <>
                             <FileManager
                                 text={text}
-                                setText={updateActiveDocument}
+                                setText={setText}
                                 activeDocName={activeDocName}
                                 updateDocName={updateActiveDocName}
-                                updateActiveDocument={updateActiveDocument}
+                                updateActiveDocument={saveCurrentDocument}
                                 storageKey={storageKey()}
                                 setActiveId={setActiveIdState}
                                 documents={documents}
