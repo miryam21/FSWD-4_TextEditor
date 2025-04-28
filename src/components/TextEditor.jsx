@@ -103,20 +103,39 @@ function TextEditor() {
     }
 
     // פונקציה להסרת המסמך מהתצוגה
-    function removeDocumentFromView(id) {
-        if (activeId === id) {
-            // שומר את המסמך לפני הסרתו מהתצוגה
-            const currentDoc = documents.find(doc => doc.id === id);
-            if (currentDoc && currentDoc.content !== text) {
-                // שומר את התוכן העדכני
-                const updatedDocs = documents.map(doc =>
-                    doc.id === id ? { ...doc, content: text } : doc
-                );
-                setDocuments(updatedDocs);
-                localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
-            }
+    // function removeDocumentFromView(id) {
+    //     if (activeId === id) {
+    //         // שומר את המסמך לפני הסרתו מהתצוגה
+    //         const currentDoc = documents.find(doc => doc.id === id);
+    //         if (currentDoc && currentDoc.content !== text) {
+    //             // שומר את התוכן העדכני
+    //             const updatedDocs = documents.map(doc =>
+    //                 doc.id === id ? { ...doc, content: text } : doc
+    //             );
+    //             setDocuments(updatedDocs);
+    //             localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
+    //         }
             
-            // מסיר את המסמך מהתצוגה
+    //         // מסיר את המסמך מהתצוגה
+    //         setActiveIdState(null);
+    //         setText("");
+    //         setActiveDocName("");
+    //     }
+        
+    //     // מסיר את המסמך מרשימת המסמכים הגלויים
+    //     setVisibleDocuments(prev => prev.filter(docId => docId !== id));
+    // }
+    function removeDocumentFromView(id) {
+        // שומר את המסמך תמיד לפני הסרתו מהתצוגה אם זה המסמך הפעיל
+        if (activeId === id) {
+            // שומר תמיד את התוכן העדכני, בלי לבדוק אם הוא שונה מהקודם
+            const updatedDocs = documents.map(doc =>
+                doc.id === id ? { ...doc, content: text } : doc
+            );
+            setDocuments(updatedDocs);
+            localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
+            
+            // סוגר את העורך
             setActiveIdState(null);
             setText("");
             setActiveDocName("");
@@ -310,7 +329,7 @@ function TextEditor() {
                 <>
                     {/* מחובר */}
                     <div style={{ marginBottom: "1em", textAlign: "center" }}>
-                        <h2>שלום, {username}!</h2>
+                        <h2>שלום, {username}</h2>
                         <button onClick={handleLogout} style={{
                             padding: "0.5em 1em",
                             fontSize: "1em",
