@@ -36,7 +36,7 @@ function TextEditor() {
         return 'text_editor_users';
     }
     
-    // פונקציית עזר לעדכון ה-localStorage
+    // Helper function to update localStorage
     function updateLocalStorage(docs) {
         if (isLoggedIn) {
             localStorage.setItem(storageKey(), JSON.stringify(docs));
@@ -46,7 +46,7 @@ function TextEditor() {
     function loadDocuments() {
         const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
         setDocuments(savedDocs);
-        setVisibleDocuments(savedDocs.map(doc => doc.id)); // כל המסמכים גלויים בהתחלה
+        setVisibleDocuments(savedDocs.map(doc => doc.id)); // All documents visible initially
         if (savedDocs.length > 0) {
             setActiveIdState(savedDocs[0].id);
             setActiveDocName(savedDocs[0].name);
@@ -69,7 +69,7 @@ function TextEditor() {
             return;
         }
         
-        // בדיקה אם המשתמש קיים
+        // Check if user exists
         const users = JSON.parse(localStorage.getItem(usersStorageKey())) || {};
         
         if (!users[username]) {
@@ -78,7 +78,7 @@ function TextEditor() {
             return;
         }
         
-        // בדיקת סיסמה
+        // Check password
         if (users[username] !== password) {
             alert("סיסמה שגויה. נסה שנית.");
             return;
@@ -104,7 +104,7 @@ function TextEditor() {
             return;
         }
         
-        // בדיקה אם המשתמש כבר קיים
+        // Check if user already exists
         const users = JSON.parse(localStorage.getItem(usersStorageKey())) || {};
         
         if (users[username]) {
@@ -112,7 +112,7 @@ function TextEditor() {
             return;
         }
         
-        // שמירת המשתמש החדש
+        // Save new user
         users[username] = password;
         localStorage.setItem(usersStorageKey(), JSON.stringify(users));
         
@@ -151,20 +151,20 @@ function TextEditor() {
         };
 
         const updatedDocs = [...savedDocs, newDoc];
-        updateLocalStorage(updatedDocs); // עדכון ה-localStorage
+        updateLocalStorage(updatedDocs);
         setDocuments(updatedDocs);
-        setVisibleDocuments(prev => [...prev, newDoc.id]); // הוספת המסמך החדש למסמכים הגלויים
+        setVisibleDocuments(prev => [...prev, newDoc.id]); // Add new document to visible documents
         setActiveIdState(newDoc.id);
         setActiveDocName(newDoc.name);
         setText("");
     }
 
-    // שינוי: הפונקציה הזו רק מעדכנת את המצב המקומי, בלי לשמור ב-localStorage
+    // Only updates local state, doesn't save to localStorage
     function updateActiveDocument(newContent) {
         setText(newContent);
     }
 
-    // פונקציה לבדיקה אם יש שינויים שלא נשמרו
+    // Check for unsaved changes
     function hasUnsavedChanges(id) {
         const currentDoc = documents.find(doc => doc.id === id);
         if (!currentDoc) return false;
@@ -172,63 +172,63 @@ function TextEditor() {
         return currentDoc.content !== text;
     }
 
-    // פונקציה לשמירת המסמך הנוכחי - עם תיקון לעדכון שם
+    // Save current document
     function saveCurrentDocument() {
         if (!activeId) return false;
         
-        // יוצרים רשימת מסמכים מעודכנת עם התוכן החדש והשם הנוכחי
+        // Create updated document list with new content and current name
         const updatedDocs = documents.map(doc =>
             doc.id === activeId ? { ...doc, name: activeDocName, content: text } : doc
         );
         
-        // עדכון במצב המקומי
+        // Update local state
         setDocuments(updatedDocs);
-        updateLocalStorage(updatedDocs); // עדכון ה-localStorage
+        updateLocalStorage(updatedDocs);
         
         return true;
     }
 
-    // פונקציה להסרת המסמך מהתצוגה
+    // Remove document from view
     function removeDocumentFromView(id) {
-        // בדיקה אם יש שינויים שלא נשמרו
+        // Check for unsaved changes
         if (activeId === id && hasUnsavedChanges(id)) {
             const confirmSave = window.confirm(`יש שינויים שלא נשמרו במסמך "${activeDocName}". האם לשמור לפני הסגירה?`);
             
             if (confirmSave) {
-                // שמירת השינויים
+                // Save changes
                 saveCurrentDocument();
             }
         }
         
-        // סגירת העורך אם זה המסמך הפעיל
+        // Close editor if this is the active document
         if (activeId === id) {
             setActiveIdState(null);
             setText("");
             setActiveDocName("");
         }
         
-        // מסיר את המסמך מרשימת המסמכים הגלויים
+        // Remove document from visible documents list
         setVisibleDocuments(prev => prev.filter(docId => docId !== id));
     }
 
-    // פונקציה להחזרת מסמך לתצוגה
+    // Return document to view
     function showDocument(id) {
         if (!visibleDocuments.includes(id)) {
             setVisibleDocuments(prev => [...prev, id]);
         }
     }
     
-    // פונקציה גלובלית לפתיחת קובץ
+    // Global function to open a file
     function openFile() {
         if (!openFileName.trim()){
             alert('missing file name');
             return;
         }
         
-        // קריאת כל המסמכים מה-localStorage (כולל המוסתרים!)
+        // Read all documents from localStorage (including hidden ones)
         const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
         
-        // חיפוש מסמך עם שם מתאים
+        // Find document with matching name
         const foundDoc = savedDocs.find(doc => doc.name === openFileName);
         
         if (!foundDoc) {
@@ -236,56 +236,56 @@ function TextEditor() {
             return;
         }
         
-        // בדיקה אם המסמך כבר פתוח
+        // Check if document is already open
         if (activeDocName === openFileName) {
             alert('File is already open');
             return;
         }
         
-        // בדיקה אם יש שינויים שלא נשמרו במסמך הנוכחי לפני המעבר למסמך חדש
+        // Check for unsaved changes in current document before switching
         if (activeId && hasUnsavedChanges(activeId)) {
             const confirmSave = window.confirm(`יש שינויים שלא נשמרו במסמך "${activeDocName}". האם לשמור לפני המעבר למסמך חדש?`);
             
             if (confirmSave) {
-                // שמירת השינויים
+                // Save changes
                 saveCurrentDocument();
             }
         }
         
-        // מחזיר לתצוגה אם היה מוסתר
+        // Return to view if hidden
         showDocument(foundDoc.id);
         
-        // מגדיר את המסמך החדש כפעיל
+        // Set new document as active
         setActiveDocName(foundDoc.name);
         setText(foundDoc.content);
         setActiveIdState(foundDoc.id);
         
-        // ניקוי שדה הקלט
+        // Clear input field
         setOpenFileName("");
         
         alert('opened ' + openFileName);
     }
     
-    // פונקציה לעדכון שם מסמך פעיל - עם תיקון לעדכון המערך
+    // Update active document name
     function updateActiveDocName(newName) {
         if (!activeId) return false;
         
-        // אם השם לא השתנה, אין צורך בבדיקות נוספות
+        // If name hasn't changed, no need for additional checks
         if (newName === activeDocName) {
             return true;
         }
         
-        // בדיקה אם השם החדש כבר קיים במסמך אחר
+        // Check if new name already exists in another document
         const existingDoc = documents.find(doc => doc.name === newName && doc.id !== activeId);
         if (existingDoc) {
-            alert('file name already exists - please choose a different name');
+            alert('File name already exists - please choose a different name');
             return false;
         }
         
-        // עדכון שם המסמך במצב המקומי
+        // Update document name in local state
         setActiveDocName(newName);
         
-        // עדכון השם גם במערך המסמכים
+        // Update name in documents array
         const updatedDocs = documents.map(doc =>
             doc.id === activeId ? { ...doc, name: newName } : doc
         );
@@ -296,39 +296,39 @@ function TextEditor() {
         return true;
     }
     
-    // פונקציה לבדיקה אם מסמך כבר פתוח
+    // Check if document is already open
     function isDocumentOpen(docName) {
         return activeDocName === docName;
     }
     
-    // פונקציה למחיקת מסמך מה-localStorage
+    // Delete document from localStorage
     function deleteDocument(id) {
-        // שואל את המשתמש לאישור לפני המחיקה
+        // Ask user for confirmation before deletion
         const docToDelete = documents.find(doc => doc.id === id);
         if (!docToDelete) return;
         
         const confirmDelete = window.confirm(`האם למחוק את המסמך "${docToDelete.name}"?`);
         if (!confirmDelete) return;
         
-        // סוגר את המסמך אם הוא פתוח כעת
+        // Close document if currently open
         if (activeId === id) {
             setActiveIdState(null);
             setText("");
             setActiveDocName("");
         }
         
-        // מחיקת המסמך ממערך המסמכים
+        // Delete document from array
         const updatedDocs = documents.filter(doc => doc.id !== id);
         setDocuments(updatedDocs);
-        setVisibleDocuments(prev => prev.filter(docId => docId !== id)); // מסיר גם מהמסמכים הגלויים
-        updateLocalStorage(updatedDocs); // עדכון ה-localStorage
+        setVisibleDocuments(prev => prev.filter(docId => docId !== id)); // Remove from visible documents too
+        updateLocalStorage(updatedDocs);
         
         alert(`המסמך "${docToDelete.name}" נמחק בהצלחה`);
     }
     
-    // פונקציה להגדרת מסמך פעיל
+    // Set active document
     function setActiveId(id) {
-        // אין לאפשר פתיחת אותו מסמך פעמיים
+        // Don't allow opening the same document twice
         const selectedDoc = documents.find(doc => doc.id === id);
         if (!selectedDoc) return;
         
@@ -337,47 +337,47 @@ function TextEditor() {
             return;
         }
         
-        // בדיקה אם יש שינויים שלא נשמרו במסמך הנוכחי לפני המעבר למסמך חדש
+        // Check for unsaved changes in current document before switching
         if (activeId && hasUnsavedChanges(activeId)) {
-            const confirmSave = window.confirm(`יש שינויים שלא נשמרו במסמך "${activeDocName}". האם לשמור לפני המעבר למסמך חדש?`);
+            const confirmSave = window.confirm(`There are unsaved changes in "${activeDocName}". Save before opening new document?`);
             
             if (confirmSave) {
-                // שמירת השינויים
+                // Save changes
                 saveCurrentDocument();
             }
         }
         
-        // מגדיר את המסמך החדש כפעיל
+        // Set new document as active
         setActiveDocName(selectedDoc.name);
         setText(selectedDoc.content);
         setActiveIdState(id);
 
-        // וודא שהמסמך נראה (במקרה שהיה מוסתר)
+        // Ensure document is visible (in case it was hidden)
         showDocument(id);
     }
     
-    // מיקוד ההקלדה על שדה הפתיחה בלחיצה על Enter
+    // Focus typing on open field when Enter is pressed
     function handleOpenFileKeyPress(e) {
         if (e.key === 'Enter') {
             openFile();
         }
     }
     
-    // מעבר בין מסכי הרשמה והתחברות
+    // Toggle between registration and login screens
     function toggleRegistration() {
         setIsRegistering(!isRegistering);
         setPassword("");
         setConfirmPassword("");
     }
     
-    // מיקוד על Enter בשדה הסיסמה
+    // Focus on Enter in password field
     function handleLoginKeyPress(e) {
         if (e.key === 'Enter') {
             handleLogin();
         }
     }
     
-    // מיקוד על Enter בשדה אישור הסיסמה
+    // Focus on Enter in confirm password field
     function handleRegisterKeyPress(e) {
         if (e.key === 'Enter') {
             handleRegister();
@@ -386,7 +386,7 @@ function TextEditor() {
 
     return (
         <div style={{ padding: "2em" }}>
-            {/* אם לא מחובר */}
+            {/* Not logged in */}
             {!isLoggedIn ? (
                 <div style={{ textAlign: "center" }}>
                     <h2>{isRegistering ? "הרשמה למערכת" : "ברוך הבא! נא להתחבר"}</h2>
@@ -480,9 +480,9 @@ function TextEditor() {
                 </div>
             ) : (
                 <>
-                    {/* מחובר */}
+                    {/* Logged in */}
                     <div style={{ marginBottom: "1em", textAlign: "center" }}>
-                        <h2>שלום, {username}</h2>
+                        <h2>שלום, {username}!</h2>
                         <button onClick={handleLogout} style={{
                             padding: "0.5em 1em",
                             fontSize: "1em",
@@ -496,7 +496,7 @@ function TextEditor() {
                         </button>
                     </div>
 
-                    {/* סרגל ניהול */}
+                    {/* Management toolbar */}
                     <div style={{ marginBottom: "1em", display: "flex", flexWrap: "wrap", gap: "0.5em", alignItems: "center", justifyContent: "center" }}>
                         <button onClick={addNewDocument} style={{
                             padding: "0.5em 1em",
@@ -508,7 +508,7 @@ function TextEditor() {
                             cursor: "pointer"
                         }}>➕ מסמך חדש</button>
                         
-                        {/* כפתור פתיחת קובץ גלובלי */}
+                        {/* Global open file button */}
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
                             <button 
                                 onClick={openFile}
@@ -540,10 +540,10 @@ function TextEditor() {
                         </div>
                     </div>
 
-                    {/* רשימת הקבצים */}
+                    {/* File list */}
                     <div style={{ marginBottom: "1em", display: "flex", flexWrap: "wrap", gap: "0.5em", justifyContent: "center" }}>
                         {documents
-                            .filter(doc => visibleDocuments.includes(doc.id)) // מציג רק מסמכים גלויים
+                            .filter(doc => visibleDocuments.includes(doc.id)) // Show only visible documents
                             .map(doc => {
                                 const isOpen = activeDocName === doc.name;
                                 return (
@@ -566,7 +566,7 @@ function TextEditor() {
                                             {doc.name}
                                             {isOpen && " (פתוח)"}
                                         </button>
-                                        {/* כפתור הסרה מהתצוגה */}
+                                        {/* Remove from view button */}
                                         <button
                                             onClick={() => removeDocumentFromView(doc.id)}
                                             style={{
@@ -606,7 +606,7 @@ function TextEditor() {
                             })}
                     </div>
                     
-                    {/* עורך הטקסט - מוצג רק כאשר יש מסמך פעיל */}
+                    {/* Text editor - only shown when there's an active document */}
                     {activeId ? (
                         <>
                             <FileManager
@@ -618,7 +618,7 @@ function TextEditor() {
                                 storageKey={storageKey()}
                                 setActiveId={setActiveIdState}
                                 documents={documents}
-                                excludeOpenButton={true} // פרמטר חדש להסרת כפתור Open
+                                excludeOpenButton={true} // New parameter to remove Open button
                             />
 
                             <TextDisplay
@@ -645,7 +645,7 @@ function TextEditor() {
                             />
                         </>
                     ) : (
-                        // הודעה כאשר אין מסמך פעיל
+                        // Message when no active document
                         <div style={{ 
                             textAlign: "center", 
                             padding: "2em", 

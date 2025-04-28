@@ -13,14 +13,14 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
             return;
         }
         
-        // אם מדובר באותו שם מסמך שכבר פתוח, פשוט נשמור את התוכן
+        // If it's the same document name that's already open, just save the content
         if (fileName === activeDocName) {
             updateActiveDocument(text);
             alert('saved successfully');
             return;
         }
         
-        // בדיקה אם השם החדש כבר קיים במסמך אחר
+        // Check if the new name already exists in another document
         const savedDocs = JSON.parse(localStorage.getItem(storageKey)) || [];
         const existingDoc = savedDocs.find(doc => doc.name === fileName);
         
@@ -29,7 +29,7 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
             return;
         }
         
-        // עדכון שם המסמך והתוכן
+        // Update document name and content
         const updateSuccessful = updateDocName(fileName);
         if (updateSuccessful) {
             updateActiveDocument(text);
@@ -52,18 +52,18 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
             return;
         }
         
-        // יצירת מסמך חדש
+        // Create new document
         const newDoc = {
             id: Date.now(),
             name: fileName,
             content: text
         };
         
-        // הוספה למערך המסמכים ושמירה ב-localStorage
+        // Add to documents array and save to localStorage
         const updatedDocs = [...savedDocs.filter(doc => doc.name !== fileName), newDoc];
         localStorage.setItem(storageKey, JSON.stringify(updatedDocs));
         
-        // עדכון המסמך הפעיל
+        // Update active document
         setActiveId(newDoc.id);
         updateDocName(fileName);
         
@@ -110,18 +110,18 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
                 Save as
             </button>
             
-            {/* הצגת כפתור Open רק אם לא ביקשו להסתיר אותו */}
+            {/* Only show Open button if not requested to hide it */}
             {!excludeOpenButton && (
                 <button 
                     value="open" 
-                    onClick={() => {}} // כפתור לא פעיל כי העברנו את פונקציית Open למסך הראשי
+                    onClick={() => {}} // Inactive button as Open function moved to main screen
                     style={{
                         padding: "0.5em 1em",
                         borderRadius: "8px",
                         backgroundColor: "#e0e0e0",
                         border: "1px solid #ccc",
                         cursor: "pointer",
-                        opacity: 0.6 // מודגש כלא פעיל
+                        opacity: 0.6 // Shown as inactive
                     }}
                 >
                     Open
