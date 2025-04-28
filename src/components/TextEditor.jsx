@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Keyboard from "./Keyboard";
 import TextDisplay from "./TextDisplay";
 import LangSelector from "./LangSelector";
@@ -14,6 +14,9 @@ function TextEditor() {
     const [text, setText] = useState("");
     const [history, setHistory] = useState([]);
     const [language, setLanguage] = useState('eng');
+    const [visibleDocuments, setVisibleDocuments] = useState([]); // מערך חדש של מסמכים גלויים
+    const [openFileName, setOpenFileName] = useState(""); // שם הקובץ לפתיחה
+    const openFileInputRef = useRef(null);
     const [style, setStyle] = useState({
         fontSize: '16px',
         fontFamily: 'Arial',
@@ -30,6 +33,7 @@ function TextEditor() {
     function loadDocuments() {
         const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
         setDocuments(savedDocs);
+        setVisibleDocuments(savedDocs.map(doc => doc.id)); // כל המסמכים גלויים בהתחלה
         if (savedDocs.length > 0) {
             setActiveIdState(savedDocs[0].id);
             setActiveDocName(savedDocs[0].name);
@@ -54,6 +58,7 @@ function TextEditor() {
         setUsername("");
         setIsLoggedIn(false);
         setDocuments([]);
+        setVisibleDocuments([]);
         setActiveIdState(null);
         setActiveDocName("");
         setText("");
@@ -78,6 +83,7 @@ function TextEditor() {
         const updatedDocs = [...savedDocs, newDoc];
         localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
         setDocuments(updatedDocs);
+        setVisibleDocuments(prev => [...prev, newDoc.id]); // הוספת המסמך החדש למסמכים הגלויים
         setActiveIdState(newDoc.id);
         setActiveDocName(newDoc.name);
         setText("");
@@ -96,12 +102,13 @@ function TextEditor() {
         localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
     }
 
-    function closeDocument(id) {
+    // פונקציה להסרת המסמך מהתצוגה
+    function removeDocumentFromView(id) {
         if (activeId === id) {
-            // שומר את המסמך לפני סגירתו
+            // שומר את המסמך לפני הסרתו מהתצוגה
             const currentDoc = documents.find(doc => doc.id === id);
             if (currentDoc && currentDoc.content !== text) {
-                // שומר את התוכן העדכני לפני הסגירה
+                // שומר את התוכן העדכני
                 const updatedDocs = documents.map(doc =>
                     doc.id === id ? { ...doc, content: text } : doc
                 );
@@ -109,11 +116,62 @@ function TextEditor() {
                 localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
             }
             
-            // מבטל את המסמך הפעיל אך לא מוחק אותו
+            // מסיר את המסמך מהתצוגה
             setActiveIdState(null);
             setText("");
             setActiveDocName("");
         }
+        
+        // מסיר את המסמך מרשימת המסמכים הגלויים
+        setVisibleDocuments(prev => prev.filter(docId => docId !== id));
+    }
+
+    // פונקציה להחזרת מסמך לתצוגה
+    function showDocument(id) {
+        if (!visibleDocuments.includes(id)) {
+            setVisibleDocuments(prev => [...prev, id]);
+        }
+    }
+    
+    // פונקציה גלובלית לפתיחת קובץ
+    function openFile() {
+        if (!openFileName.trim()){
+            alert('missing file name');
+            return;
+        }
+        
+        // קריאת כל המסמכים מה-localStorage (כולל המוסתרים!)
+        const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
+        console.log("מסמכים בזיכרון:", savedDocs);
+        // חיפוש מסמך עם שם מתאים
+      
+        const foundDoc = savedDocs.find(doc => doc.name === openFileName);
+        console.log("מסמך שמחפשים:", openFileName);
+        console.log("מסמך שנמצתא:", foundDoc);
+        
+        if (!foundDoc) {
+            alert('no file with this name');
+            return;
+        }
+        
+        // בדיקה אם המסמך כבר פתוח
+        if (activeDocName === openFileName) {
+            alert('File is already open');
+            return;
+        }
+        
+        // מחזיר לתצוגה אם היה מוסתר
+        showDocument(foundDoc.id);
+        
+        // מגדיר את המסמך החדש כפעיל
+        setActiveDocName(foundDoc.name);
+        setText(foundDoc.content);
+        setActiveIdState(foundDoc.id);
+        
+        // ניקוי שדה הקלט
+        setOpenFileName("");
+        
+        alert('opened ' + openFileName);
     }
     
     function updateActiveDocName(newName) {
@@ -166,6 +224,7 @@ function TextEditor() {
         // מחיקת המסמך ממערך המסמכים
         const updatedDocs = documents.filter(doc => doc.id !== id);
         setDocuments(updatedDocs);
+        setVisibleDocuments(prev => prev.filter(docId => docId !== id)); // מסיר גם מהמסמכים הגלויים
         localStorage.setItem(storageKey(), JSON.stringify(updatedDocs));
         
         alert(`המסמך "${docToDelete.name}" נמחק בהצלחה`);
@@ -195,13 +254,24 @@ function TextEditor() {
         setActiveDocName(selectedDoc.name);
         setText(selectedDoc.content);
         setActiveIdState(id);
+
+        // וודא שהמסמך נראה (במקרה שהיה מוסתר)
+        showDocument(id);
     }
     
+    // האזנה לאירועים מהמערכת
     useEffect(() => {
         if (isLoggedIn) {
             localStorage.setItem(storageKey(), JSON.stringify(documents));
         }
     }, [documents, isLoggedIn]);
+
+    // מיקוד ההקלדה על שדה הפתיחה בלחיצה על Enter
+    function handleOpenFileKeyPress(e) {
+        if (e.key === 'Enter') {
+            openFile();
+        }
+    }
 
     return (
         <div style={{ padding: "2em" }}>
@@ -265,62 +335,104 @@ function TextEditor() {
                             border: "none",
                             cursor: "pointer"
                         }}>➕ מסמך חדש</button>
-                        {activeId && (
-                            <button onClick={() => closeDocument(activeId)} style={{
-                                padding: "0.5em 1em",
-                                fontSize: "1em",
-                                borderRadius: "8px",
-                                backgroundColor: "#f44336",
-                                color: "white",
-                                border: "none",
-                                cursor: "pointer"
-                            }}>❌ סגור מסמך</button>
-                        )}
+                        
+                        {/* כפתור פתיחת קובץ גלובלי */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
+                            <button 
+                                onClick={openFile}
+                                style={{
+                                    padding: "0.5em 1em",
+                                    fontSize: "1em",
+                                    borderRadius: "8px",
+                                    backgroundColor: "#2196F3",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: "pointer"
+                                }}
+                            >
+                                Open
+                            </button>
+                            <input 
+                                ref={openFileInputRef}
+                                type="text" 
+                                placeholder="שם הקובץ לפתיחה"
+                                value={openFileName}
+                                onChange={(e) => setOpenFileName(e.target.value)}
+                                onKeyPress={handleOpenFileKeyPress}
+                                style={{
+                                    padding: "0.5em",
+                                    borderRadius: "8px",
+                                    border: "1px solid #ccc",
+                                    width: "200px"
+                                }}
+                            />
+                        </div>
                     </div>
 
                     {/* רשימת הקבצים */}
                     <div style={{ marginBottom: "1em", display: "flex", flexWrap: "wrap", gap: "0.5em", justifyContent: "center" }}>
-                        {documents.map(doc => {
-                            const isOpen = activeDocName === doc.name;
-                            return (
-                                <div key={doc.id} style={{ display: "flex", alignItems: "center", marginBottom: "0.5em" }}>
-                                    <button
-                                        onClick={() => setActiveId(doc.id)}
-                                        disabled={isOpen}
-                                        style={{
-                                            padding: "0.5em",
-                                            minWidth: "120px",
-                                            backgroundColor: isOpen ? "#d0e8ff" : "white",
-                                            border: isOpen ? "2px solid blue" : "1px solid gray",
-                                            borderRadius: "8px",
-                                            textAlign: "center",
-                                            cursor: isOpen ? "default" : "pointer",
-                                            fontWeight: isOpen ? "bold" : "normal",
-                                            opacity: isOpen ? 0.7 : 1
-                                        }}
-                                    >
-                                        {doc.name}
-                                        {isOpen && " (פתוח)"}
-                                    </button>
-                                    <button
-                                        onClick={() => deleteDocument(doc.id)}
-                                        style={{
-                                            marginRight: "0.3em",
-                                            marginLeft: "0.3em",
-                                            padding: "0.3em 0.5em",
-                                            color: "white",
-                                            borderRadius: "8px",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            fontSize: "0.9em"
-                                        }}
-                                        title="מחק מסמך"
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            );
-                        })}
+                        {documents
+                            .filter(doc => visibleDocuments.includes(doc.id)) // מציג רק מסמכים גלויים
+                            .map(doc => {
+                                const isOpen = activeDocName === doc.name;
+                                return (
+                                    <div key={doc.id} style={{ display: "flex", alignItems: "center", marginBottom: "0.5em" }}>
+                                        <button
+                                            onClick={() => setActiveId(doc.id)}
+                                            disabled={isOpen}
+                                            style={{
+                                                padding: "0.5em",
+                                                minWidth: "120px",
+                                                backgroundColor: isOpen ? "#d0e8ff" : "white",
+                                                border: isOpen ? "2px solid blue" : "1px solid gray",
+                                                borderRadius: "8px",
+                                                textAlign: "center",
+                                                cursor: isOpen ? "default" : "pointer",
+                                                fontWeight: isOpen ? "bold" : "normal",
+                                                opacity: isOpen ? 0.7 : 1
+                                            }}
+                                        >
+                                            {doc.name}
+                                            {isOpen && " (פתוח)"}
+                                        </button>
+                                        {/* כפתור הסרה מהתצוגה */}
+                                        <button
+                                            onClick={() => removeDocumentFromView(doc.id)}
+                                            style={{
+                                                marginRight: "0.3em",
+                                                marginLeft: "0.3em",
+                                                padding: "0.3em 0.5em",
+                                                backgroundColor: "#FFC107",
+                                                color: "black",
+                                                borderRadius: "8px",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                fontSize: "0.9em"
+                                            }}
+                                            title="הסר מהתצוגה"
+                                        >
+                                            👁️
+                                        </button>
+                                        <button
+                                            onClick={() => deleteDocument(doc.id)}
+                                            style={{
+                                                marginRight: "0.3em",
+                                                marginLeft: "0.3em",
+                                                padding: "0.3em 0.5em",
+                                                color: "white",
+                                                borderRadius: "8px",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                fontSize: "0.9em",
+                                                backgroundColor: "#f44336"
+                                            }}
+                                            title="מחק מסמך"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                );
+                            })}
                     </div>
                     
                     {/* עורך הטקסט - מוצג רק כאשר יש מסמך פעיל */}
@@ -335,6 +447,7 @@ function TextEditor() {
                                 storageKey={storageKey()}
                                 setActiveId={setActiveIdState}
                                 documents={documents}
+                                excludeOpenButton={true} // פרמטר חדש להסרת כפתור Open
                             />
 
                             <TextDisplay

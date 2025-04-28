@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-function FileManager({ text, setText, activeDocName, updateDocName, updateActiveDocument, storageKey, setActiveId, documents }) {
+function FileManager({ text, setText, activeDocName, updateDocName, updateActiveDocument, storageKey, setActiveId, documents, excludeOpenButton = false }) {
     const [fileName, setFileName] = useState(activeDocName || '');
 
     function handleFileName(e) {
@@ -70,50 +70,6 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
         alert('saved as ' + fileName);
     }
 
-    function openFile() {
-        if (!fileName.trim()){
-            alert('missing file name');
-            return;
-        }
-        
-        // Get saved documents
-        const savedDocs = JSON.parse(localStorage.getItem(storageKey)) || [];
-        
-        // Find document with matching name
-        const foundDoc = savedDocs.find(doc => doc.name === fileName);
-        
-        if (!foundDoc) {
-            alert('no file with this name');
-            return;
-        }
-        
-        // מונע פתיחה של מסמך שכבר פתוח באפליקציה
-        // בדוק בכל המסמכים אם יש מסמך עם אותו שם שכבר פתוח
-        const allDocs = JSON.parse(localStorage.getItem(storageKey)) || [];
-        const isDocumentOpen = allDocs.some(doc => 
-            doc.name === fileName && doc.isOpen === true
-        );
-        
-        if (isDocumentOpen) {
-            alert('File is already open in another tab');
-            return;
-        }
-        
-        // סמן את המסמך כפתוח
-        const updatedDocs = allDocs.map(doc => 
-            doc.id === foundDoc.id 
-                ? { ...doc, isOpen: true } 
-                : doc
-        );
-        localStorage.setItem(storageKey, JSON.stringify(updatedDocs));
-        
-        // Load document content
-        setActiveId(foundDoc.id);
-        setText(foundDoc.content);
-        updateDocName(foundDoc.name);
-        alert('opened ' + fileName);
-    }
-
     // Update fileName when activeDocName changes
     useEffect(() => {
         setFileName(activeDocName || '');
@@ -153,19 +109,25 @@ function FileManager({ text, setText, activeDocName, updateDocName, updateActive
             >
                 Save as
             </button>
-            <button 
-                value="open" 
-                onClick={openFile}
-                style={{
-                    padding: "0.5em 1em",
-                    borderRadius: "8px",
-                    backgroundColor: "#e0e0e0",
-                    border: "1px solid #ccc",
-                    cursor: "pointer"
-                }}
-            >
-                Open
-            </button>
+            
+            {/* הצגת כפתור Open רק אם לא ביקשו להסתיר אותו */}
+            {!excludeOpenButton && (
+                <button 
+                    value="open" 
+                    onClick={() => {}} // כפתור לא פעיל כי העברנו את פונקציית Open למסך הראשי
+                    style={{
+                        padding: "0.5em 1em",
+                        borderRadius: "8px",
+                        backgroundColor: "#e0e0e0",
+                        border: "1px solid #ccc",
+                        cursor: "pointer",
+                        opacity: 0.6 // מודגש כלא פעיל
+                    }}
+                >
+                    Open
+                </button>
+            )}
+            
             <input 
                 type="text" 
                 name="file-name"
