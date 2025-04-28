@@ -18,27 +18,38 @@ function Keyboard({ language, style, currText, setText, history, setHistory }) {
         setHistory(h => [...h, currText]);
 
         if (e.target.innerHTML == "space ␣") {
-            setText(prevText => prevText + `<span>&nbsp;</span>`)
+            //setText(prevText => prevText + `<span>&nbsp;</span>`)
+            setText(currText + `<span>&nbsp;</span>`);
         }
 
         else if (e.target.innerHTML == "enter ↵") {
-            setText(prevText => prevText + `<span><br /></span>`)
+            //setText(prevText => prevText + `<span><br /></span>`)
+            setText(currText + `<span><br /></span>`);
         }
 
         else if (e.target.innerHTML == "backspace ⌫") {
-            setText(prevText => {
-                return prevText.replace(/<span[^>]*>[^<]*<\/span>$|<span><br\s?\/?><\/span>$/, '');
-            });
+            // setText(prevText => {
+            //     return prevText.replace(/<span[^>]*>[^<]*<\/span>$|<span><br\s?\/?><\/span>$/, '');
+            // });
+            const newText = currText.replace(/<span[^>]*>[^<]*<\/span>$|<span><br\s?\/?><\/span>$/, '');
+            setText(newText);
         }
 
         else if (e.target.innerHTML == "del word") {
-            setText(prevText => {
-                let lastIndex = Math.max(
-                    prevText.lastIndexOf('<span>&nbsp;</span>'),
-                    prevText.lastIndexOf('<span><br /></span>'));
-                lastIndex = lastIndex == -1 ? 0 : lastIndex;
-                return prevText.slice(0, lastIndex);
-            });
+            // setText(prevText => {
+            //     let lastIndex = Math.max(
+            //         prevText.lastIndexOf('<span>&nbsp;</span>'),
+            //         prevText.lastIndexOf('<span><br /></span>'));
+            //     lastIndex = lastIndex == -1 ? 0 : lastIndex;
+            //     return prevText.slice(0, lastIndex);
+            // });
+            let lastIndex = Math.max(
+                currText.lastIndexOf('<span>&nbsp;</span>'),
+                currText.lastIndexOf('<span><br /></span>')
+            );
+            lastIndex = lastIndex == -1 ? 0 : lastIndex;
+            const newText = currText.slice(0, lastIndex);
+            setText(newText);
         }
 
         else if (e.target.innerHTML == "clear ✘") {
@@ -46,12 +57,18 @@ function Keyboard({ language, style, currText, setText, history, setHistory }) {
         }
 
         else {
-            setText(prevText => prevText + `<span style="font-size: ${style.fontSize};
+            // setText(prevText => prevText + `<span style="font-size: ${style.fontSize};
+            //     font-family: ${style.fontFamily};
+            //     color: ${style.color};
+            //     font-weight: ${style.fontWeight};
+            //     font-style: ${style.fontStyle};
+            //     text-decoration: ${style.textDecoration};">${e.target.innerHTML}</span>`)
+            setText(currText + `<span style="font-size: ${style.fontSize};
                 font-family: ${style.fontFamily};
                 color: ${style.color};
                 font-weight: ${style.fontWeight};
                 font-style: ${style.fontStyle};
-                text-decoration: ${style.textDecoration};">${e.target.innerHTML}</span>`)
+                text-decoration: ${style.textDecoration}">${e.target.innerHTML}</span>`)
         }
     }
 
