@@ -123,6 +123,16 @@ function TextEditor() {
     }
 
     function handleLogout() {
+        // Check for unsaved changes in current document before logout
+        if (activeId && hasUnsavedChanges(activeId)) {
+            const confirmSave = window.confirm(`יש שינויים שלא נשמרו במסמך "${activeDocName}". האם לשמור לפני התנתקות?`);
+            
+            if (confirmSave) {
+                // Save changes
+                saveCurrentDocument();
+            }
+        }
+        
         setUsername("");
         setPassword("");
         setConfirmPassword("");
@@ -135,6 +145,16 @@ function TextEditor() {
     }
 
     function addNewDocument() {
+        // Check for unsaved changes in current document before switching
+        if (activeId && hasUnsavedChanges(activeId)) {
+            const confirmSave = window.confirm(`יש שינויים שלא נשמרו במסמך "${activeDocName}". האם לשמור לפני פתיחת מסמך חדש?`);
+            
+            if (confirmSave) {
+                // Save changes
+                saveCurrentDocument();
+            }
+        }
+        
         const savedDocs = JSON.parse(localStorage.getItem(storageKey())) || [];
         const defaultName = "מסמך חדש";
         let newName = defaultName;
